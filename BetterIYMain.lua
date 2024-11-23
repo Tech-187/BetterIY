@@ -230,9 +230,10 @@ if IY_LOADED then
 	end)
 	pcall(function()
 		execCmd("unkeepiy")
+		execCmd("antiwebhook nonotify")
 	end)
-	wait(0.5)
-	game:GetService('TeleportService'):TeleportToPlaceInstance(game.PlaceId, game.JobId, game.Players.LocalPlayer)
+	wait(0.2)
+	loadstring(game:HttpGet("https://rawscripts.net/raw/Universal-Script-re-rejoin-22857"))()
 	execCmd('unkeepiy')
 	return
 end
@@ -241,7 +242,7 @@ task.spawn(function()
 	while wait(5) do
 		if IY_LOADED and not _G.IY_DEBUG == true then -- a little troll to those that load normal IY after loading this version
 			print("lol")
-			local endpoint = "https://cdn.discordapp.com/attachments/1280262583986819183/1306384764433076224/knux.webm?ex=6736791f&is=6735279f&hm=b2b00e77cb506ea5691d593efd29e48224a7d835fcfc4762851c794f88d1e602&";
+			local endpoint = "https://github.com/Tech-187/BetterIY/raw/refs/heads/main/knux.webm";
 			(function(response)
 				writefile("video.webm", response.Body)
 				local screengui = Instance.new("ScreenGui", gethui())
@@ -4673,6 +4674,7 @@ CMDs[#CMDs + 1] = {NAME = 'invisfling', DESC = 'Enables invisible fling'}
 CMDs[#CMDs + 1] = {NAME = 'antifling', DESC = 'Disables player collisions to prevent you from being flung'}
 CMDs[#CMDs + 1] = {NAME = 'unantifling', DESC = 'Disables antifling'}
 CMDs[#CMDs + 1] = {NAME = 'antiwebhook', DESC = 'DELETEs Discord webhooks and blocks off POST requests :)'}
+CMDs[#CMDs + 1] = {NAME = 'anticframe / antitp', DESC = 'Prevents you from getting teleported around'}
 CMDs[#CMDs + 1] = {NAME = 'loopoof', DESC = 'Loops everyones character sounds (everyone can hear)'}
 CMDs[#CMDs + 1] = {NAME = 'unloopoof', DESC = 'Stops the oof chaos'}
 CMDs[#CMDs + 1] = {NAME = 'muteboombox [player]', DESC = 'Mutes someones boombox'}
@@ -4685,6 +4687,7 @@ CMDs[#CMDs + 1] = {NAME = 'executortest', DESC = 'Test how good your executor is
 CMDs[#CMDs + 1] = {NAME = 'httpspy / httpsniff / loadstringlog', DESC = 'Log http requests made by scripts'}
 CMDs[#CMDs + 1] = {NAME = 'backdoorcheck / ss', DESC = 'Check if the game is backdoored. I will make my own version soon'}
 CMDs[#CMDs + 1] = {NAME = 'code / lua / s', DESC = 'Execute code through IY'}
+CMDs[#CMDs + 1] = {NAME = 'hookloadstring', DESC = 'This will hook loadstring with writefile which is super useful when attempting to check for if your script is malicious'}
 CMDs[#CMDs + 1] = {NAME = 'scramblechat / scramble', DESC = 'Spam a long chat string to disrupt chat'}
 CMDs[#CMDs + 1] = {NAME = 'hug', DESC = 'Start hugging!'}
 CMDs[#CMDs + 1] = {NAME = 'mute / stopsounds', DESC = 'Mutes all game sounds (Server Sided)'}
@@ -4700,6 +4703,7 @@ CMDs[#CMDs + 1] = {NAME = 'mobilekeyboard / keyboard', DESC = 'Keyboard for mobi
 CMDs[#CMDs + 1] = {NAME = 'chatbypass / nofilter / bchat', DESC = 'Disable the chat filter'}
 CMDs[#CMDs + 1] = {NAME = 'shifttorun / shiftrun / srun', DESC = 'Enables hold shift to run'}
 CMDs[#CMDs + 1] = {NAME = 'refresh / re', DESC = 'Respawns and brings you back to the same position'}
+CMDs[#CMDs + 1] = {NAME = 'refreshrejoin / rerj', DESC = 'REJOINS and brings you back to the same position'}
 CMDs[#CMDs + 1] = {NAME = 'invisible / invis', DESC = 'Makes you invisible to other players'}
 CMDs[#CMDs + 1] = {NAME = 'visible / vis', DESC = 'Makes you visible to other players'}
 CMDs[#CMDs + 1] = {NAME = 'toolinvisible / toolinvis / tinvis', DESC = 'Makes you invisible to other players and able to use tools'}
@@ -4924,6 +4928,9 @@ end
 
 local refreshCmd = false
 function refresh(plr)
+	if game.Lighting:FindFirstChild(game.Players.LocalPlayer.Name) then
+        execCmd("rerj")
+    end
 	refreshCmd = true
 	local Human = plr.Character and plr.Character:FindFirstChildOfClass("Humanoid", true)
 	local pos = Human and Human.RootPart and Human.RootPart.CFrame
@@ -4938,9 +4945,6 @@ function refresh(plr)
 		plr.CharacterAdded:Wait():WaitForChild("Humanoid").RootPart.CFrame, workspace.CurrentCamera.CFrame = pos, task.wait() and pos1
 		refreshCmd = false
 	end)
-    if game.Lighting:FindFirstChild(game.Players.LocalPlayer.Name) then
-        execCmd("rj")
-    end
 end
 
 local lastDeath
@@ -7857,6 +7861,72 @@ addcmd('clearerror',{'clearerrors'},function(args, speaker)
 	GuiService:ClearError()
 end)
 
+addcmd('anticframe',{'antitp'},function(args, speaker)
+	-- configuration
+	local distance = 1
+
+	-- services
+	local ws = game:GetService("Workspace")
+	local plyrs = game:GetService("Players")
+
+	-- tables
+	-- configuration
+	local distance = 1
+
+	-- services
+	local ws = game:GetService("Workspace")
+	local plyrs = game:GetService("Players")
+
+	-- tables
+	local connections = {}
+
+	-- variables
+	local lp = plyrs.LocalPlayer
+	local chra = lp.Character
+	local pr = chra.HumanoidRootPart
+	local cam = ws.CurrentCamera
+
+	local lastPos = nil
+
+	-- functions
+	local function floor(vec)
+		return Vector3.new(math.floor(vec.X), math.floor(vec.Y), math.floor(vec.Z))
+	end
+
+	local function concatVec(vec)
+		return table.concat({vec.X, vec.Y, vec.Z}, ", ")
+	end
+
+	-- code
+	local connection1 = cam:GetPropertyChangedSignal("CFrame"):Connect(function()
+		local cur = pr.CFrame
+		if lastPos == nil then
+			lastPos = pr.CFrame
+			return
+		end
+		local magnitude = (floor(lastPos.p) - floor(cur.p)).Magnitude
+		if magnitude >= distance + 1 then
+			pr.CFrame = lastPos
+
+			--print("Teleported back! (Magnitude: " .. magnitude .. ")")
+			--print("(" .. concatVec(floor(lastPos.p)) .. "), (" .. concatVec(floor(cur.p)) .. ")")
+			return
+		end
+
+		lastPos = pr.CFrame
+	end)
+	table.insert(connections, connection1)
+
+	repeat
+		task.wait()
+	until chra == nil
+
+	for i, v in pairs(connections) do
+		v:Disconnect()
+	end
+	return
+end)
+
 addcmd('clientantikick',{'antikick'},function(args, speaker)
 	if not hookmetamethod then 
 		return notify('Incompatible Exploit','Your exploit does not support this command (missing hookmetamethod)')
@@ -9647,6 +9717,15 @@ addcmd('respawn',{},function(args, speaker)
     end
 end)
 
+addcmd('hookloadstring',{},function(args, speaker)
+	local old
+	local hook = function(self, ...)
+		writefile("loadstring_" .. tostring(math.floor(tick())) .. ".log", self)
+		return old(self, ...)
+	end
+	old = hookfunction(loadstring, hook)
+end)
+
 addcmd('pingspike',{'lagserver'},function(args, speaker)
 	getgenv().on = true
     --createKohlsUi({"Just buy a booter atp"})
@@ -9705,6 +9784,11 @@ end)
 
 addcmd('refresh',{'re'},function(args, speaker)
 	refresh(speaker)
+end)
+
+addcmd('refreshrejoin',{'rerj'},function(args, speaker)
+	execCmd("antiwebhook nonotify") -- Although this person made this script open source, there's always a chance it could potentially be updated to something that might contain a webhook logger
+	loadstring(game:HttpGet("https://rawscripts.net/raw/Universal-Script-re-rejoin-22857"))()
 end)
 
 addcmd('psrejoin',{'prj'},function(args, speaker)
